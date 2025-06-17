@@ -1,0 +1,44 @@
+name: OPA Terraform Policy Check
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  opa-terraform-policy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Set up OPA
+        uses: open-policy-agent/setup-opa@v2
+
+      - name: Initialize Terraform
+        run: terraform init
+
+      - name: Generate Terraform plan
+        run: terraform plan -out=tfplan
+
+      - name: Convert Terraform plan to JSON
+        run: terraform show -json tfplan > tfplan.json
+
+      - name: Run OPA policy check
+        run: |
+          if opa eval -d policy.rego -i tfplan.json "data.terraform.gcp.deny" | grep -q '\[\]'; then
+            echo "OPA Policy: No deny rules triggered, plan is good!"
+          else
+            echo "OPA Policy: Deny rules found. Please fix the issues below:"
+            opa eval -d policy.rego -i tfplan.json "data.terraform.gcp.deny"
+            exit 1
+          fi
