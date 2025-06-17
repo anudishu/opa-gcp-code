@@ -1,5 +1,3 @@
-# Simple GCP Terraform Configuration for Testing
-
 
 
 
