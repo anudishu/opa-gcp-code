@@ -97,7 +97,7 @@ This policy acts like **spell-check for infrastructure** - catching problems bef
     
 
 Understanding the Query Structure
-"data.terraform.gcp.deny" breaks down as:
+"data.terraform.gcp.deny" breaks down as:   
 
 data = OPA's root namespace for all loaded policies
 terraform.gcp = the package name from your policy (package terraform.gcp)
