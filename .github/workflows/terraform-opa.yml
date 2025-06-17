@@ -1,0 +1,53 @@
+name: Terraform Validate and Deploy with OPA
+
+on:
+  push:
+    branches:
+      - main  # or your target branch
+
+jobs:
+  validate-and-apply:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.7  # Adjust if needed
+
+      - name: Authenticate with GCP
+        uses: google-github-actions/auth@v2
+        with:
+            credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        run: |
+          terraform plan -out=tfplan.binary
+          terraform show -json tfplan.binary > tfplan.json
+
+      - name: Install OPA CLI
+        run: |
+          curl -L -o opa https://openpolicyagent.org/downloads/latest/opa_linux_amd64_static
+          chmod +x opa
+          sudo mv opa /usr/local/bin/
+
+      - name: Run OPA Policy Check
+        id: opa_check
+        run: |
+          echo "Evaluating policy..."
+          result=$(opa eval --format json --input tfplan.json --data policy.rego "data.terraform.gcp.deny")
+          echo "$result" | jq
+          echo "$result" | jq -e '.result[0].expressions[0].value | length == 0' \
+            || (echo "Policy violation detected!" && exit 1)
+
+      - name: Terraform Apply
+        if: success()  # runs only if OPA check passed
+        run: terraform apply -auto-approve tfplan.binary
