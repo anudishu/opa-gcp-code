@@ -94,7 +94,7 @@ opa eval -d policy.rego -i tfplan.json "data.terraform.gcp.deny"
 
 This policy acts like **spell-check for infrastructure** - catching problems before they become expensive mistakes!
 
-
+    
 
 Understanding the Query Structure
 "data.terraform.gcp.deny" breaks down as:
