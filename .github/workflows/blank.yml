@@ -24,21 +24,36 @@ jobs:
       - name: Set up OPA
         uses: open-policy-agent/setup-opa@v2
 
+      - name: Check for Terraform files
+        run: |
+          if [ ! -f "main.tf" ] && [ ! -f "terraform.tf" ]; then
+            echo "No Terraform configuration found in repository root."
+            exit 1
+          fi
+
       - name: Initialize Terraform
-        run: terraform init
+        run: terraform init -input=false
 
       - name: Generate Terraform plan
-        run: terraform plan -out=tfplan
+        run: terraform plan -out=tfplan -input=false
 
       - name: Convert Terraform plan to JSON
         run: terraform show -json tfplan > tfplan.json
 
+      - name: Check for policy.rego
+        run: |
+          if [ ! -f "policy.rego" ]; then
+            echo "policy.rego file not found. Please add your OPA policy file."
+            exit 1
+          fi
+
       - name: Run OPA policy check
         run: |
-          if opa eval -d policy.rego -i tfplan.json "data.terraform.gcp.deny" | grep -q '\[\]'; then
+          result=$(opa eval -d policy.rego -i tfplan.json "data.terraform.gcp.deny")
+          if echo "$result" | grep -q '\[\]'; then
             echo "OPA Policy: No deny rules triggered, plan is good!"
           else
             echo "OPA Policy: Deny rules found. Please fix the issues below:"
-            opa eval -d policy.rego -i tfplan.json "data.terraform.gcp.deny"
+            echo "$result"
             exit 1
           fi
