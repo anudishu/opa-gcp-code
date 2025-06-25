@@ -1,81 +1,19 @@
-name: OPA Terraform Plan & Apply (GCP)
+name: Simple GCP Action
 
 on:
   push:
     branches:
-      - main
-      - master
-  pull_request:
-    branches:
-      - main
-      - master
+      - master  # or 'main', if that's your default branch
 
 jobs:
-  terraform-opa-policy:
+  print-secret:
     runs-on: ubuntu-latest
-
     steps:
-      - name: 🛒 Checkout repo
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: 🧱 Set up Terraform
-        uses: hashicorp/setup-terraform@v3
-
-      - name: 🛡️ Set up OPA
-        uses: open-policy-agent/setup-opa@v2
-
-      - name: 📂 Check for Terraform files
+      - name: Print GCP Service Account Secret (for demo only)
         run: |
-          if [ ! -f "main.tf" ] && [ ! -f "terraform.tf" ]; then
-            echo "❌ No Terraform configuration found."
-            exit 1
-          fi
-      - name: 🔐 Write GCP credentials to file
-        run: |
-          echo "${{ secrets.GCLOUD_CREDENTIALS }}" | sed 's/\\n/\n/g' > $HOME/gcloud.json
-          cat $HOME/gcloud.json | jq . >/dev/null || { echo "Invalid JSON in GCLOUD_CREDENTIALS"; exit 1; }
-        shell: bash
-
-
-      - name: 🚀 Terraform Init
+          echo "$SA"
         env:
-          GOOGLE_APPLICATION_CREDENTIALS: $HOME/gcloud.json
-        run: terraform init -input=false
-
-      - name: 📉 Terraform Plan
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: $HOME/gcloud.json
-        run: terraform plan -out=tfplan -input=false
-
-      - name: 📊 Convert Plan to JSON
-        run: terraform show -json tfplan > tfplan.json
-
-      - name: 🔎 Check for policy.rego
-        run: |
-          if [ ! -f "policy.rego" ]; then
-            echo "❌ policy.rego not found!"
-            exit 1
-          fi
-
-      - name: 🧠 OPA Policy Evaluation
-        id: opa_check
-        run: |
-          echo "🔍 Running OPA policy check..."
-          result=$(opa eval --format=json -d policy.rego -i tfplan.json "data.terraform.gcp.deny")
-          messages=$(echo "$result" | jq -r '.result[0].expressions[0].value[]?')
-
-          if [ -z "$messages" ]; then
-            echo "✅ No violations. Safe to apply."
-            echo "passed=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "❌ OPA Policy Violations:"
-            echo "$messages"
-            echo "passed=false" >> "$GITHUB_OUTPUT"
-            exit 1
-          fi
-
-      - name: ✅ Terraform Apply
-        if: steps.opa_check.outputs.passed == 'true'
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: $HOME/gcloud.json
-        run: terraform apply -auto-approve
+          SA: ${{ secrets.SA }}
