@@ -17,13 +17,18 @@ jobs:
         uses: actions/checkout@v4
 
       - name: 🔐 Write GCP credentials
-        run: echo '${{ secrets.SA }}' > key.json
+        run: |
+          echo "${{ secrets.SA }}" > key.json
 
       - name: 🧱 Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
       - name: 🚀 Terraform Init
-        run: terraform init
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/key.json
+        run: terraform init -input=false
 
       - name: 💥 Terraform Destroy
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/key.json
         run: terraform destroy -auto-approve
