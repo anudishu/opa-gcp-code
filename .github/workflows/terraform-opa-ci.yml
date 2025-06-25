@@ -51,9 +51,8 @@ jobs:
           else
             echo "✅ OPA Policy Passed: No violations found."
           fi
-
-      - name: ✅ Terraform Apply
+      - name: Terraform Apply
+        if: steps.opa_check.outcome == 'success'
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/key.json
-        if: steps.opa_check.outcome == 'success'
         run: terraform apply -auto-approve tfplan
