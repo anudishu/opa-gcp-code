@@ -19,3 +19,4 @@ variable "zone" {
   default     = "us-central1-a"
 }
 
+variable "google_credentials_file" {}
