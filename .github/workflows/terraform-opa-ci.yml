@@ -56,3 +56,9 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/key.json
         run: terraform apply -auto-approve tfplan
+
+      - name: Terraform Destroy
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.confirm_destroy == 'YES'
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/key.json
+        run: terraform destroy -auto-approve            
