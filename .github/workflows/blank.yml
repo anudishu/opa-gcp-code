@@ -31,22 +31,19 @@ jobs:
             exit 1
           fi
 
-      # Step 1: Set up Google Cloud credentials from GitHub secret
       - name: Set up Google Cloud credentials
         run: |
-          echo "${{ secrets.GCLOUD_CREDENTIALS }}" > "${HOME}/gcloud.json"
+          echo "${{ secrets.GCLOUD_CREDENTIALS }}" > "$HOME/gcloud.json"
         shell: bash
 
-      # Step 2: Terraform Init with credentials
       - name: Initialize Terraform
         env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ HOME }}/gcloud.json
+          GOOGLE_APPLICATION_CREDENTIALS: $HOME/gcloud.json
         run: terraform init -input=false
 
-      # Step 3: Terraform Plan with credentials
       - name: Generate Terraform plan
         env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ HOME }}/gcloud.json
+          GOOGLE_APPLICATION_CREDENTIALS: $HOME/gcloud.json
         run: terraform plan -out=tfplan -input=false
 
       - name: Convert Terraform plan to JSON
