@@ -1,0 +1,29 @@
+name: Terraform Destroy Manual
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_destroy:
+        description: "Type YES to confirm destruction of infrastructure"
+        required: true
+
+jobs:
+  destroy:
+    if: ${{ github.event.inputs.confirm_destroy == 'YES' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🛒 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔐 Write GCP credentials
+        run: echo '${{ secrets.SA }}' > key.json
+
+      - name: 🧱 Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: 🚀 Terraform Init
+        run: terraform init
+
+      - name: 💥 Terraform Destroy
+        run: terraform destroy -auto-approve

@@ -3,48 +3,51 @@ name: Terraform OPA CI
 on:
   push:
     branches:
-      - master  # or main
+      - main
+      - master
 
 jobs:
   terraform-opa:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: 🛒 Checkout code
         uses: actions/checkout@v4
 
-      - name: 🔐 Write GCP credentials to key.json
-        run: echo '${{ secrets.SA}}' > key.json
+      - name: 🔐 Write GCP credentials
+        run: echo '${{ secrets.SA }}' > key.json
 
-
-      - name: Set up Terraform
+      - name: 🧱 Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      - name: Install OPA and jq
+      - name: 🛡️ Install OPA and jq
         run: |
           sudo wget -O /usr/local/bin/opa https://openpolicyagent.org/downloads/latest/opa_linux_amd64_static
           sudo chmod +x /usr/local/bin/opa
           sudo apt-get update && sudo apt-get install -y jq
 
-      - name: Terraform Init
+      - name: 🚀 Terraform Init
         run: terraform init
 
-      - name: Terraform Plan
+      - name: 📉 Terraform Plan
         run: terraform plan -out=tfplan
 
-      - name: Generate JSON plan
+      - name: 🧾 Generate JSON plan
         run: terraform show -json tfplan > tfplan.json
 
-      - name: OPA Policy Check
+      - name: 🔍 OPA Policy Check
         id: opa_check
         run: |
+          echo "🔍 Running OPA Policy Check..."
           result=$(opa eval -d policy.rego -i tfplan.json "data.terraform.gcp.deny" | jq -r '.result[0].expressions[0].value | @json')
           if [ "$result" != "[]" ] && [ "$result" != "null" ]; then
-            echo "OPA Policy Violations Detected:"
+            echo "❌ OPA Policy Violations Detected:"
             echo "$result"
             exit 1
+          else
+            echo "✅ OPA Policy Passed: No violations found."
           fi
 
-      - name: Terraform Apply
+      - name: ✅ Terraform Apply
         if: steps.opa_check.outcome == 'success'
         run: terraform apply -auto-approve tfplan
