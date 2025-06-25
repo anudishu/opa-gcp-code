@@ -53,5 +53,7 @@ jobs:
           fi
 
       - name: ✅ Terraform Apply
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/key.json
         if: steps.opa_check.outcome == 'success'
         run: terraform apply -auto-approve tfplan
