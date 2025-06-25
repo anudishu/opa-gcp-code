@@ -1,4 +1,4 @@
-name: OPA Terraform Policy Check
+name: OPA Terraform Plan & Apply (GCP)
 
 on:
   push:
@@ -11,58 +11,70 @@ on:
       - master
 
 jobs:
-  opa-terraform-policy:
+  terraform-opa-policy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: 🛒 Checkout repo
         uses: actions/checkout@v4
 
-      - name: Set up Terraform
+      - name: 🧱 Set up Terraform
         uses: hashicorp/setup-terraform@v3
 
-      - name: Set up OPA
+      - name: 🛡️ Set up OPA
         uses: open-policy-agent/setup-opa@v2
 
-      - name: Check for Terraform files
+      - name: 📂 Check for Terraform files
         run: |
           if [ ! -f "main.tf" ] && [ ! -f "terraform.tf" ]; then
-            echo "No Terraform configuration found in repository root."
+            echo "❌ No Terraform configuration found."
             exit 1
           fi
 
-      - name: Set up Google Cloud credentials
+      - name: 🔐 Write GCP credentials
         run: |
-          echo "${{ secrets.GCLOUD_CREDENTIALS }}" > "$HOME/gcloud.json"
+          echo '${{ secrets.GCLOUD_CREDENTIALS }}' > "$HOME/gcloud.json"
         shell: bash
 
-      - name: Initialize Terraform
+      - name: 🚀 Terraform Init
         env:
           GOOGLE_APPLICATION_CREDENTIALS: $HOME/gcloud.json
         run: terraform init -input=false
 
-      - name: Generate Terraform plan
+      - name: 📉 Terraform Plan
         env:
           GOOGLE_APPLICATION_CREDENTIALS: $HOME/gcloud.json
         run: terraform plan -out=tfplan -input=false
 
-      - name: Convert Terraform plan to JSON
+      - name: 📊 Convert Plan to JSON
         run: terraform show -json tfplan > tfplan.json
 
-      - name: Check for policy.rego
+      - name: 🔎 Check for policy.rego
         run: |
           if [ ! -f "policy.rego" ]; then
-            echo "policy.rego file not found. Please add your OPA policy file."
+            echo "❌ policy.rego not found!"
             exit 1
           fi
 
-      - name: Run OPA policy check
+      - name: 🧠 OPA Policy Evaluation
+        id: opa_check
         run: |
-          result=$(opa eval -d policy.rego -i tfplan.json "data.terraform.gcp.deny")
-          if echo "$result" | grep -q '\[\]'; then
-            echo "OPA Policy: No deny rules triggered, plan is good!"
+          echo "🔍 Running OPA policy check..."
+          result=$(opa eval --format=json -d policy.rego -i tfplan.json "data.terraform.gcp.deny")
+          messages=$(echo "$result" | jq -r '.result[0].expressions[0].value[]?')
+
+          if [ -z "$messages" ]; then
+            echo "✅ No violations. Safe to apply."
+            echo "passed=true" >> "$GITHUB_OUTPUT"
           else
-            echo "OPA Policy: Deny rules found. Please fix the issues below:"
-            echo "$result"
+            echo "❌ OPA Policy Violations:"
+            echo "$messages"
+            echo "passed=false" >> "$GITHUB_OUTPUT"
             exit 1
           fi
+
+      - name: ✅ Terraform Apply
+        if: steps.opa_check.outputs.passed == 'true'
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: $HOME/gcloud.json
+        run: terraform apply -auto-approve
