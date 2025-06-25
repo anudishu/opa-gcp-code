@@ -30,11 +30,12 @@ jobs:
             echo "❌ No Terraform configuration found."
             exit 1
           fi
-
-      - name: 🔐 Write GCP credentials
+      - name: 🔐 Write GCP credentials to file
         run: |
-          echo '${{ secrets.GCLOUD_CREDENTIALS }}' > "$HOME/gcloud.json"
+          echo "${{ secrets.GCLOUD_CREDENTIALS }}" | sed 's/\\n/\n/g' > $HOME/gcloud.json
+          cat $HOME/gcloud.json | jq . >/dev/null || { echo "Invalid JSON in GCLOUD_CREDENTIALS"; exit 1; }
         shell: bash
+
 
       - name: 🚀 Terraform Init
         env:
