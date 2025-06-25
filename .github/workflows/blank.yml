@@ -13,10 +13,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: 🔐 Write GCP credentials to file
-        run: |
-          echo '${{ secrets.SA }}' > "$HOME/key.json"
-          echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/key.json" >> $GITHUB_ENV
+      - name: 🔐 Write GCP credentials to key.json
+        run: echo '${{ secrets.SA}}' > key.json
+
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
