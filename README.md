@@ -5,6 +5,23 @@ This is a **Rego policy file** that acts like a security guard for your Terrafor
 
 ---
 
+### 0. Create a GCP Service Account and Download Credentials
+
+1. **Go to the [Google Cloud Console](https://console.cloud.google.com/)**
+2. **Create a Service Account**
+    - Go to **IAM & Admin → Service Accounts**
+    - Click **Create Service Account**
+    - Name it `terraform-sa`
+3. **Assign Owner Role (for testing only)**
+    - Grant the **Owner** role to the service account (for initial setup; you can restrict permissions later)
+4. **Download the Key File**
+    - After creation, go to the **Keys** tab for your service account
+    - Click **Add Key → Create new key → JSON**
+    - Download the key file and rename it to `key.json`
+    - Place `key.json` in a safe location for use with this repository
+
+---    
+
 ## 🚀 How to Use This Repo
 
 You can use this repo both locally (on your machine) and as part of a CI/CD pipeline on GitHub Actions. Start with local checks to ensure everything works, then move to automated checks in the cloud!
@@ -28,7 +45,7 @@ Create a `terraform.tfvars` file in the root directory with the following variab
 project_id              = "your-gcp-project-id"
 region                  = "your-gcp-region"
 zone                    = "your-gcp-zone"
-google_credentials_file = "path/to/your/service-account.json"
+google_credentials_file = "path/to/your/key.json"
 ```
 
 - **project_id**: Your GCP project ID  
