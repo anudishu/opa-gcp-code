@@ -47,7 +47,7 @@ jobs:
           if [ "$result" != "[]" ] && [ "$result" != "null" ]; then
             echo "❌ OPA Policy Violations Detected:"
             echo "$result"
-            exit 1
+            exit 1 
           else 
             echo "✅ OPA Policy Passed: No violations found."
           fi
