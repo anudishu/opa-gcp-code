@@ -33,7 +33,7 @@ resource "google_storage_bucket_object" "test_file" {
 # Compute Engine instance
 resource "google_compute_instance" "test_vm" {
   name         = "terraform-test-vm"
-  machine_type = "e2-medium"
+  machine_type = "e2-micro"
   zone         = var.zone
 
   boot_disk {
@@ -69,7 +69,7 @@ resource "google_compute_firewall" "allow_http" {
 
   allow {
     protocol = "tcp"
-    ports    = ["22"]
+    ports    = ["80"]
   }
 
   source_ranges = ["0.0.0.0/0"]
