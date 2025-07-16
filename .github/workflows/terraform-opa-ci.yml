@@ -48,7 +48,7 @@ jobs:
             echo "❌ OPA Policy Violations Detected:"
             echo "$result"
             exit 1
-          else
+          else 
             echo "✅ OPA Policy Passed: No violations found."
           fi
       - name: Terraform Apply
